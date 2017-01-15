@@ -37,7 +37,7 @@ use work.slvtypes.all;
 entity s7_cmt_sfs is                    -- 7-Series CMT for simple freq. synth.
   generic (
     VCO_DIVIDE : positive := 1;         -- vco clock divide
-    VCO_MULTIPLY : positive := 1;       -- vco clock multiply 
+    VCO_MULTIPLY : positive := 1;       -- vco clock multiply
     OUT_DIVIDE : positive := 1;         -- output divide
     CLKIN_PERIOD : real := 10.0;        -- CLKIN period (def is 10.0 ns)
     CLKIN_JITTER : real := 0.01;        -- CLKIN jitter (def is 10 ps)
@@ -45,7 +45,7 @@ entity s7_cmt_sfs is                    -- 7-Series CMT for simple freq. synth.
     GEN_TYPE : string := "PLL");        -- PLL or MMCM
   port (
     CLKIN : in slbit;                   -- clock input
-    CLKFX : out slbit;                  -- clock output (synthesized freq.) 
+    CLKFX : out slbit;                  -- clock output (synthesized freq.)
     LOCKED : out slbit                  -- pll/mmcm locked
   );
 end s7_cmt_sfs;
@@ -54,7 +54,7 @@ end s7_cmt_sfs;
 architecture syn of s7_cmt_sfs is
 
 begin
-    
+
   assert GEN_TYPE = "PLL" or GEN_TYPE = "MMCM"
     report "assert(GEN_TYPE='PLL' or GEN_TYPE='MMCM')"
     severity failure;
@@ -85,7 +85,7 @@ begin
         return "FALSE";
       end if;
     end function bool2string;
-      
+
   begin
 
     PLL : PLLE2_BASE
@@ -194,5 +194,103 @@ begin
       );
 
   end generate USEMMCM;
-   
+
+end syn;
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+library unisim;
+use unisim.vcomponents.ALL;
+
+use work.slvtypes.all;
+
+entity s7_cmt_sfs2 is                    -- 7-Series CMT for simple freq. synth.
+  generic (
+    VCO_DIVIDE : positive := 1;         -- vco clock divide
+    VCO_MULTIPLY : positive := 1;       -- vco clock multiply
+    OUT_DIVIDE : positive := 1;         -- output divide
+    OUT1_DIVIDE : positive := 1;	-- aux output divide
+    CLKIN_PERIOD : real := 10.0;        -- CLKIN period (def is 10.0 ns)
+    CLKIN_JITTER : real := 0.01;        -- CLKIN jitter (def is 10 ps)
+    STARTUP_WAIT : boolean := false;    -- hold FPGA startup till LOCKED
+    GEN_TYPE : string := "PLL");        -- PLL or MMCM
+  port (
+    CLKIN : in slbit;                   -- clock input
+    CLKFX : out slbit;                 -- clock output (synthesized freq.)
+    CLKFX1 : out slbit;
+    LOCKED : out slbit                  -- pll/mmcm locked
+  );
+end s7_cmt_sfs2;
+
+architecture syn of s7_cmt_sfs2 is
+
+    signal CLKFBOUT         : slbit;
+    signal CLKFBOUT_BUF     : slbit;
+    signal CLKOUT0          : slbit;
+    signal CLKOUT1          : slbit;
+    signal CLKOUT2_UNUSED   : slbit;
+    signal CLKOUT3_UNUSED   : slbit;
+    signal CLKOUT4_UNUSED   : slbit;
+    signal CLKOUT5_UNUSED   : slbit;
+    signal CLKOUT6_UNUSED   : slbit;
+
+    pure function bool2string (val : boolean) return string is
+    begin
+      if val then
+        return "TRUE";
+      else
+        return "FALSE";
+      end if;
+    end function bool2string;
+
+  begin
+
+    PLL : PLLE2_BASE
+      generic map (
+        BANDWIDTH            => "OPTIMIZED",
+        DIVCLK_DIVIDE        => VCO_DIVIDE,
+        CLKFBOUT_MULT        => VCO_MULTIPLY,
+        CLKFBOUT_PHASE       => 0.000,
+        CLKOUT0_DIVIDE       => OUT_DIVIDE,
+        CLKOUT0_PHASE        => 0.000,
+        CLKOUT0_DUTY_CYCLE   => 0.500,
+        CLKOUT1_DIVIDE       => OUT1_DIVIDE,
+        CLKOUT1_PHASE        => 0.000,
+        CLKOUT1_DUTY_CYCLE   => 0.500,
+        CLKIN1_PERIOD        => CLKIN_PERIOD,
+        REF_JITTER1          => CLKIN_JITTER,
+        STARTUP_WAIT         => bool2string(STARTUP_WAIT))
+      port map (
+        CLKFBOUT            => CLKFBOUT,
+        CLKOUT0             => CLKOUT0,
+        CLKOUT1             => CLKOUT1,
+        CLKOUT2             => CLKOUT2_UNUSED,
+        CLKOUT3             => CLKOUT3_UNUSED,
+        CLKOUT4             => CLKOUT4_UNUSED,
+        CLKOUT5             => CLKOUT5_UNUSED,
+        CLKFBIN             => CLKFBOUT_BUF,
+        CLKIN1              => CLKIN,
+        LOCKED              => LOCKED,
+        PWRDWN              => '0',
+        RST                 => '0'
+      );
+
+    BUFG_CLKFB : BUFG
+      port map (
+        I => CLKFBOUT,
+        O => CLKFBOUT_BUF
+      );
+
+    BUFG_CLKOUT : BUFG
+      port map (
+        I => CLKOUT0,
+        O => CLKFX
+      );
+
+    BUFG_CLKOUT1 : BUFG
+      port map (
+        I => CLKOUT1,
+        O => CLKFX1
+      );
 end syn;

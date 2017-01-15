@@ -206,6 +206,24 @@ component s7_cmt_sfs is                 -- 7-Series CMT for simple freq. synth.
   );
 end component;
 
+component s7_cmt_sfs2 is                -- 7-Series CMT for simple freq. synth.
+  generic (
+    VCO_DIVIDE : positive := 1;         -- vco clock divide
+    VCO_MULTIPLY : positive := 1;       -- vco clock multiply
+    OUT_DIVIDE : positive := 1;         -- output divide
+    OUT1_DIVIDE : positive := 1;	      -- aux output divide
+    CLKIN_PERIOD : real := 10.0;        -- CLKIN period (def is 10.0 ns)
+    CLKIN_JITTER : real := 0.01;        -- CLKIN jitter (def is 10 ps)
+    STARTUP_WAIT : boolean := false;    -- hold FPGA startup till LOCKED
+    GEN_TYPE : string := "PLL");        -- PLL or MMCM
+  port (
+    CLKIN : in slbit;                   -- clock input
+    CLKFX : out slbit;                  -- clock output (synthesized freq.)
+    CLKFX1 : out slbit;
+    LOCKED : out slbit                  -- pll/mmcm locked
+  );
+end component;
+
 component s6_cmt_sfs is                 -- Spartan-6 CMT for simple freq. synth.
   generic (
     VCO_DIVIDE : positive := 1;         -- vco clock divide
