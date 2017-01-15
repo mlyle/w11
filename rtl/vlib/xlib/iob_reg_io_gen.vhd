@@ -36,6 +36,7 @@ use work.xlib.all;
 
 entity iob_reg_io_gen is                -- registered IOB, in/output, vector
   generic (
+    IOBATTR : string := "true";         -- can be used to force attr val
     DWIDTH : positive := 16;            -- data port width
     INITI : slbit := '0';               -- initial state ( in flop)
     INITO : slbit := '0';               -- initial state (out flop)
@@ -64,9 +65,9 @@ architecture syn of iob_reg_io_gen is
   constant all_h : slv(DWIDTH-1 downto 0) := (others=>'H');
   
   attribute iob : string;
-  attribute iob of R_TE : signal is "true";
-  attribute iob of R_DI : signal is "true";
-  attribute iob of R_DO : signal is "true";
+  attribute iob of R_TE : signal is IOBATTR;
+  attribute iob of R_DI : signal is IOBATTR;
+  attribute iob of R_DO : signal is IOBATTR;
 
 begin
 

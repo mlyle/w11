@@ -40,9 +40,11 @@ use work.slvtypes.all;
 
 package xlib is
 
-component iob_reg_i is                  -- registered IOB, input
+component iob_reg_i is                     -- registered IOB, input
   generic (
-    INIT : slbit := '0');               -- initial state
+    INIT    : slbit := '0';             -- initial state
+    IOBATTR : string := "true"          -- can be used to force attr value
+  );
   port (
     CLK  : in slbit;                    -- clock
     CE   : in slbit := '1';             -- clock enable
@@ -51,8 +53,9 @@ component iob_reg_i is                  -- registered IOB, input
   );
 end component;
 
-component iob_reg_i_gen is              -- registered IOB, input, vector
+component iob_reg_i_gen is                 -- registered IOB, input, vector
   generic (
+    IOBATTR : string := "true";         -- can be used to force attr val
     DWIDTH : positive := 16;            -- data port width
     INIT : slbit := '0');               -- initial state
   port (
@@ -63,9 +66,11 @@ component iob_reg_i_gen is              -- registered IOB, input, vector
   );
 end component;
 
-component iob_reg_o is                  -- registered IOB, output
+component iob_reg_o is                     -- registered IOB, output
   generic (
-    INIT : slbit := '0');               -- initial state
+    INIT    : slbit := '0';             -- initial state
+    IOBATTR : string := "true"          -- can be used to force attr val
+  );
   port (
     CLK  : in slbit;                    -- clock
     CE   : in slbit := '1';             -- clock enable
@@ -74,8 +79,9 @@ component iob_reg_o is                  -- registered IOB, output
   );
 end component;
 
-component iob_reg_o_gen is              -- registered IOB, output, vector
+component iob_reg_o_gen is                 -- registered IOB, output, vector
   generic (
+    IOBATTR : string := "true";         -- can be used to force attr val
     DWIDTH : positive := 16;            -- data port width
     INIT : slbit := '0');               -- initial state
   port (
@@ -103,8 +109,9 @@ component iob_reg_io is                 -- registered IOB, in/output
   );
 end component;
 
-component iob_reg_io_gen is             -- registered IOB, in/output, vector
+component iob_reg_io_gen is                -- registered IOB, in/output, vector
   generic (
+    IOBATTR : string := "true";         -- can be used to force attr val
     DWIDTH : positive := 16;            -- data port width
     INITI : slbit := '0';               -- initial state ( in flop)
     INITO : slbit := '0';               -- initial state (out flop)
@@ -117,7 +124,7 @@ component iob_reg_io_gen is             -- registered IOB, in/output, vector
     OE   : in slbit;                    -- output enable
     DI   : out slv(DWIDTH-1 downto 0);  -- input data   (read from pad)
     DO   : in slv(DWIDTH-1 downto 0);   -- output data  (write  to pad)
-    PAD  : inout slv(DWIDTH-1 downto 0)  -- i/o pad
+    PAD  : inout slv(DWIDTH-1 downto 0) -- i/o pad
   );
 end component;
 

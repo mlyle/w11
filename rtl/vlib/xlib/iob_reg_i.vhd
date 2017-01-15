@@ -33,7 +33,9 @@ use work.xlib.all;
 
 entity iob_reg_i is                     -- registered IOB, input
   generic (
-    INIT : slbit := '0');               -- initial state
+    INIT    : slbit := '0';             -- initial state
+    IOBATTR : string := "true"          -- can be used to force attr value
+  );
   port (
     CLK  : in slbit;                    -- clock
     CE   : in slbit := '1';             -- clock enable
@@ -49,8 +51,10 @@ begin
 
   IOB : iob_reg_i_gen
     generic map (
-      DWIDTH => 1,
-      INIT   => INIT)
+      DWIDTH  => 1,
+      INIT    => INIT,
+      IOBATTR => IOBATTR
+    )
     port map (
       CLK    => CLK,
       CE     => CE,
