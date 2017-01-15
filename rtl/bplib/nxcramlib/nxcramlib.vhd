@@ -37,9 +37,21 @@ pure function cram_read0delay(clk_mhz : positive) return positive;
 pure function cram_read1delay(clk_mhz : positive) return positive;
 pure function cram_writedelay(clk_mhz : positive) return positive;
 
+pure function ram2ddr_read0delay(clk_mhz : positive) return positive;
+pure function ram2ddr_read1delay(clk_mhz : positive) return positive;
+pure function ram2ddr_writedelay(clk_mhz : positive) return positive;
+
 constant cram_read0delay_ps : positive := 80000;   -- initial read delay
 constant cram_read1delay_ps : positive := 30000;   -- page read delay
 constant cram_writedelay_ps : positive := 75000;   -- write delay
+
+--constant ram2ddr_read0delay_ps : positive := 210000;   -- initial read delay
+--constant ram2ddr_read1delay_ps : positive := 210000;   -- no page bursting
+--constant ram2ddr_writedelay_ps : positive := 260000;   -- write delay
+
+constant ram2ddr_read0delay_ps : positive := 290000;   -- initial read delay
+constant ram2ddr_read1delay_ps : positive := 290000;   -- no page bursting
+constant ram2ddr_writedelay_ps : positive := 290000;   -- write delay
 
 component nx_cram_dummy is              -- CRAM protection dummy 
   port (
@@ -58,6 +70,11 @@ end component;
 
 component nx_cram_memctl_as is          -- CRAM driver (async+page mode)
   generic (
+    IOBATTR    : string := "true";      -- Used when "CRAM" is not going offchip
+                                        -- to inhibit iob generation
+    CEFIRSTCYCLE : slbit := '1';        -- ram2ddr expects the enable to strobe
+                                        -- inactive between transactions; supply
+                                        -- '0' here for that behavior
     READ0DELAY : positive := 4;         -- read word 0 delay in clock cycles
     READ1DELAY : positive := 2;         -- read word 1 delay in clock cycles
     WRITEDELAY : positive := 4);        -- write delay in clock cycles
@@ -127,5 +144,29 @@ pure function cram_writedelay(          -- write delay in clock cycles
 begin
   return cram_delay(clk_mhz, cram_writedelay_ps);
 end function cram_writedelay;
+
+-- -------------------------------------
+pure function ram2ddr_read0delay(         -- read0 delay in clock cycles
+  clk_mhz : positive)                     -- clock frequency in MHz
+  return positive is
+begin
+  return cram_delay(clk_mhz, ram2ddr_read0delay_ps);
+end function ram2ddr_read0delay;
+
+-- -------------------------------------
+pure function ram2ddr_read1delay(         -- read1 delay in clock cycles
+  clk_mhz : positive)                     -- clock frequency in MHz
+  return positive is
+begin
+  return cram_delay(clk_mhz, ram2ddr_read1delay_ps);
+end function ram2ddr_read1delay;
+
+-- -------------------------------------
+pure function ram2ddr_writedelay(         -- write delay in clock cycles
+  clk_mhz : positive)                     -- clock frequency in MHz
+  return positive is
+begin
+  return cram_delay(clk_mhz, ram2ddr_writedelay_ps);
+end function ram2ddr_writedelay;
 
 end package body nxcramlib;

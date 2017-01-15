@@ -119,6 +119,11 @@ use work.xlib.all;
 
 entity nx_cram_memctl_as is             -- CRAM driver (async+page mode)
   generic (
+    IOBATTR    : string := "true";      -- used when "CRAM" is not going offchip
+                                        -- to override IOB generation
+    CEFIRSTCYCLE : slbit := '1';        -- ram2ddr expects the enable to strobe
+                                        -- inactive between transactions; supply
+                                        -- '0' here for this behavior
     READ0DELAY : positive := 4;         -- read word 0 delay in clock cycles
     READ1DELAY : positive := 2;         -- read word 1 delay in clock cycles
     WRITEDELAY : positive := 4);        -- write delay in clock cycles
@@ -179,7 +184,7 @@ architecture syn of nx_cram_memctl_as is
     ackr : slbit;                       -- signal ack_r
     addr0 : slbit;                      -- current addr0
     be2nd : slv2;                       -- be's of 2nd write cycle
-    cntdly : slv3;                      -- wait delay counter
+    cntdly : slv6;                      -- wait delay counter
     cntce : slv7;                       -- ce counter
     fidle : slbit;                      -- force idle flag
     memdo0 : slv16;                     -- mem data out, low word
@@ -249,7 +254,8 @@ begin
   
   IOB_MEM_CE : iob_reg_o
     generic map (
-      INIT   => '1')
+      IOBATTR => IOBATTR,
+      INIT    => '1')
     port map (
       CLK => CLK,
       CE  => '1',
@@ -259,8 +265,9 @@ begin
   
   IOB_MEM_BE : iob_reg_o_gen
     generic map (
-      DWIDTH => 2,
-      INIT   => '1')
+      IOBATTR => IOBATTR,
+      DWIDTH  => 2,
+      INIT    => '1')
     port map (
       CLK => CLK,
       CE  => BE_CE,
@@ -270,7 +277,8 @@ begin
   
   IOB_MEM_WE : iob_reg_o
     generic map (
-      INIT   => '1')
+      IOBATTR => IOBATTR,
+      INIT    => '1')
     port map (
       CLK => CLK_180,
       CE  => '1',
@@ -280,7 +288,8 @@ begin
   
   IOB_MEM_OE : iob_reg_o
     generic map (
-      INIT   => '1')
+      IOBATTR => IOBATTR,
+      INIT    => '1')
     port map (
       CLK => CLK,
       CE  => '1',
@@ -290,7 +299,8 @@ begin
   
   IOB_MEM_CRE : iob_reg_o
     generic map (
-      INIT   => '0')
+      IOBATTR => IOBATTR,
+      INIT    => '0')
     port map (
       CLK => CLK,
       CE  => '1',
@@ -300,7 +310,8 @@ begin
   
   IOB_MEM_ADDRH : iob_reg_o_gen
     generic map (
-      DWIDTH => 22)
+      IOBATTR => IOBATTR,
+      DWIDTH  => 22)
     port map (
       CLK => CLK,
       CE  => ADDRH_CE,
@@ -309,6 +320,8 @@ begin
     );
   
   IOB_MEM_ADDR0 : iob_reg_o
+    generic map (
+      IOBATTR => IOBATTR)
     port map (
       CLK => CLK,
       CE  => ADDR0_CE,
@@ -318,6 +331,7 @@ begin
   
   IOB_MEM_DATA : iob_reg_io_gen
     generic map (
+      IOBATTR => IOBATTR,
       DWIDTH => 16,
       PULL   => "NONE")
     port map (
@@ -489,7 +503,7 @@ begin
       when s_rdinit =>                  -- s_rdinit:  read init cycle
         ibusy   := '1';                   -- signal busy, unable to handle req
         iactr   := '1';                   -- signal mem read
-        imem_ce := '1';                   -- ce CRAM next cycle
+        imem_ce := CEFIRSTCYCLE;          -- ce CRAM next cycle
         imem_oe := '1';                   -- oe CRAM next cycle
         n.cntdly:= slv(to_unsigned(READ0DELAY-3, n.cntdly'length));
         n.state := s_rdwait0;             -- next: wait low word
@@ -506,7 +520,7 @@ begin
       when s_rdget0 =>                  -- s_rdget0: read get low word
         ibusy   := '1';                   -- signal busy, unable to handle req
         iactr   := '1';                   -- signal mem read
-        imem_ce := '1';                   -- ce CRAM next cycle
+        imem_ce := CEFIRSTCYCLE;          -- ce CRAM next cycle
         imem_oe := '1';                   -- oe CRAM next cycle
         idata_cei := '1';                 -- latch input data
         iaddr0_ce := '1';                 -- latch address 0 bit
@@ -544,7 +558,7 @@ begin
         iackw := '1';                     -- signal write done (all latched)
         idata_ceo:= '1';                  -- latch output data
         idata_oe := '1';                  -- oe FPGA next cycle
-        imem_ce  := '1';                  -- ce CRAM next cycle
+        imem_ce  := CEFIRSTCYCLE;         -- ce CRAM next cycle
         imem_we  := '1';                  -- we CRAM in half cycle
         n.cntdly:= slv(to_unsigned(WRITEDELAY-2, n.cntdly'length));
         n.state := s_wrwait0;             -- next: wait
@@ -564,7 +578,7 @@ begin
         imem_we  := '0';                  -- deassert we CRAM in half cycle
         if r.be2nd /= "00" then
           ibusy := '1';                     -- signal busy, unable to handle req
-          imem_ce  := '1';                  -- ce CRAM next cycle
+          imem_ce  := CEFIRSTCYCLE;         -- ce CRAM next cycle
           iaddr0_ce := '1';                 -- latch address 0 bit
           iaddr0    := '1';                 -- now go for high word
           ibe_ce    := '1';                 -- latch be's
